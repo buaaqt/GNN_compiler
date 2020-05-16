@@ -145,7 +145,10 @@ def unit_allocate(com_seq):
 
     a = []
     for i in range(aggr_units_num):
-        temp = temp_result[i][0]
+        if len(temp_result[i]) == 0:
+            continue
+        else:
+            temp = temp_result[i][0]
         if i == 0:
             for j in temp:
                 a += j
