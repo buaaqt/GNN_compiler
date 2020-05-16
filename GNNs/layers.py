@@ -152,6 +152,11 @@ class MyGraphConvolution(Module):
 
         # update
         output = multiply_add(self.weight, input, self.bias, op_dic)
+        file_name = 'LAYER_' + str(self.layer_id) + '_UPDATE_FEAT.csv'
+        if op_dic is not None:
+            np_arr = output.detach().numpy()
+            np.savetxt('./output/' + file_name, np_arr, delimiter=",")
+            pass
 
         # load the pre-computed computing sequence
         com_seq = (np.loadtxt('./loads/compute_seq.csv')).astype(int)
@@ -283,6 +288,12 @@ class MyGraphAttentionLayer(Module):
             op_dic['ops'].append(SaveLayerInfo(self.layer_id, file_name).to_dict())
 
         h = multiply_add(self.W, input, self.bias, op_dic)
+        file_name = 'LAYER_' + str(self.layer_id) + '_UPDATE_FEAT.csv'
+        if op_dic is not None:
+            np_arr = h.detach().numpy()
+            np.savetxt('./output/' + file_name, np_arr, delimiter=",")
+            pass
+
         N = h.size()[0]
         feat_dim = h.size()[1]
         my_shape = (adj.size()[0], adj.size()[1])
