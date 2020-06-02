@@ -1,6 +1,23 @@
+import sys
 import numpy as np
 import scipy.sparse as sp
 import torch
+import pickle as pkl
+import networkx as nx
+
+def _parse_index_file(filename):
+    """Parse index file."""
+    index = []
+    for line in open(filename):
+        index.append(int(line.strip()))
+    return index
+
+
+def _pickle_load(pkl_file):
+    if sys.version_info > (3, 0):
+        return pkl.load(pkl_file, encoding='latin1')
+    else:
+        return pkl.load(pkl_file)
 
 
 def encode_onehot(labels):
@@ -19,6 +36,8 @@ def load_data(dataset):
         return load_cora()
     elif dataset is 'dummy':
         return load_dummy()
+    elif dataset is 'citeseer':
+        return load_citeseer()
 
 
 def load_cora(path="../data/cora/", dataset="cora"):
@@ -95,6 +114,48 @@ def load_dummy(path="../data/dummy/dummy_graph.npz", dataset="dummy"):
 
     return adj, features, labels, idx_train, idx_val, idx_test
 
+
+def load_citeseer(path="../data/citeseer", dataset="citeseer"):
+    objnames = ['x', 'y', 'tx', 'ty', 'allx', 'ally', 'graph']
+    objects = []
+    for i in range(len(objnames)):
+        with open("{}/ind.{}.{}".format(path, dataset, objnames[i]), 'rb') as f:
+            objects.append(_pickle_load(f))
+
+    x, y, tx, ty, allx, ally, graph = tuple(objects)
+    test_idx_reorder = _parse_index_file("{}/ind.{}.test.index".format(path, dataset))
+    test_idx_range = np.sort(test_idx_reorder)
+    test_idx_range_full = range(min(test_idx_reorder), max(test_idx_reorder) + 1)
+    tx_extended = sp.lil_matrix((len(test_idx_range_full), x.shape[1]))
+    tx_extended[test_idx_range - min(test_idx_range), :] = tx
+    tx = tx_extended
+    ty_extended = np.zeros((len(test_idx_range_full), y.shape[1]))
+    ty_extended[test_idx_range - min(test_idx_range), :] = ty
+    ty = ty_extended
+
+    features = sp.vstack((allx, tx)).tolil()
+    features[test_idx_reorder, :] = features[test_idx_range, :]
+    features = features.tocsr()
+    graph = nx.DiGraph(nx.from_dict_of_lists(graph))
+    adj = nx.adjacency_matrix(graph)
+
+    onehot_labels = np.vstack((ally, ty))
+    onehot_labels[test_idx_reorder, :] = onehot_labels[test_idx_range, :]
+    labels = np.argmax(onehot_labels, 1)
+
+    idx_test = test_idx_range.tolist()
+    idx_train = range(len(y))
+    idx_val = range(len(y), len(y) + 500)
+
+    features = torch.FloatTensor(np.array(features.todense()))
+    adj = torch.FloatTensor(np.array(adj.todense()))
+
+    labels = torch.LongTensor(labels)
+    idx_train = torch.LongTensor(idx_train)
+    idx_val = torch.LongTensor(idx_val)
+    idx_test = torch.LongTensor(idx_test)
+
+    return adj, features, labels, idx_train, idx_val, idx_test
 
 
 

@@ -78,7 +78,7 @@ if __name__ == "__main__":
     parser.add_argument('--trainmode', action='store_true', default=False, help='Enable training.')
     parser.add_argument('--seqgenflag', action='store_true', default=False, help='Enable generating compute sequence.')
     parser.add_argument('--fastmode', action='store_true', default=False, help='Validate during training pass.')
-    parser.add_argument('--dataset', type=str, default='cora', help='Select a dataset.')
+    parser.add_argument('--dataset', type=str, default='citeseer', help='Select a dataset.')
     parser.add_argument('--model', type=str, default='GCN', help='Select GNN model.')
     # general paras
     parser.add_argument('--seed', type=int, default=42, help='Random seed.')
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     parser.add_argument('--dropout', type=float, default=0.5, help='Dropout rate (1 - keep probability).')
     # GAT paras
     parser.add_argument('--nb_heads', type=int, default=2, help='Number of head attentions.')
-    parser.add_argument('--alpha', type=float, default=0.2, help='Alpha for the leaky_relu.')
+    parser.add_argument('--alpha', type=float, default=0.2, help='Alpha for the leakyrelu.')
     args = parser.parse_args()
     args.cuda = not args.no_cuda and torch.cuda.is_available()
 
@@ -179,5 +179,5 @@ if __name__ == "__main__":
             test(opt_dic=operation_dict, train_flag=False)
             json.dump(operation_dict, opt_f, indent=4)
 
-        print('Expected inference time: {:.4f}s ...'.format(evaluate(operation_dict)))
+        evaluate(operation_dict)
 
